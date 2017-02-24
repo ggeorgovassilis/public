@@ -98,6 +98,11 @@
 	showTOC();
 })();
 
+function loadLatestPosts(){
+	var s = document.createElement("script");
+	s.setAttribute("src", "//feeds/posts/default?orderby=published&alt=json-in-script&callback=renderLatestPosts");
+	document.getElementsByTagName("head")[0].appendChild(s);
+}
 function renderLatestPosts(v) {
 	var entries = v.feed.entry;
 	var count = entries.length < 5 ? entries.length : 5;
@@ -144,3 +149,5 @@ function renderLatestPosts(v) {
 	}
 	e.innerHTML = s;
 }
+
+loadLatestPosts();
