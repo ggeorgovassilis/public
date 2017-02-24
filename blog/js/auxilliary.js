@@ -98,14 +98,12 @@
 	showTOC();
 })();
 
-console.log(1);
 function loadLatestPosts(){
 	console.log("load latest posts");
 	var s = document.createElement("script");
-	s.setAttribute("src", "//feeds/posts/default?orderby=published&alt=json-in-script&callback=renderLatestPosts");
+	s.setAttribute("src", "https://blog.georgovassilis.com/feeds/posts/default?orderby=published&alt=json-in-script&callback=renderLatestPosts");
 	document.getElementsByTagName("head")[0].appendChild(s);
 }
-console.log(2);
 
 function renderLatestPosts(v) {
 	var entries = v.feed.entry;
@@ -153,6 +151,5 @@ function renderLatestPosts(v) {
 	}
 	e.innerHTML = s;
 }
-console.log(3);
 
 loadLatestPosts();
