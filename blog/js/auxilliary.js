@@ -29,7 +29,7 @@
 				var link = links[i];
 				var href = "" + link.getAttribute("href");
 				if (href.indexOf("http://blog.georgovassilis.com") != -1) {
-					href = href.replace("http:", "https:");
+					href = href.replace("http://", "https://");
 					link.setAttribute("href", href);
 				}
 			}
@@ -139,9 +139,11 @@ function renderLatestPosts(v) {
 			shortText = shortText.substring(0, shortText.lastIndexOf(" "))
 					+ "...";
 		}
-		var summary = "<a class=summary href='" + link.href + "'>" + shortText
+		var href = link.href;
+		href = href.replace("http://","https://");
+		var summary = "<a class=summary href='" + href + "'>" + shortText
 				+ "</a>"
-		var title = "<a class=posttitle href='" + link.href + "'>" + link.title
+		var title = "<a class=posttitle href='" + href + "'>" + link.title
 				+ "</a>";
 		var publicationDate = formatDate(new Date(post.published.$t));
 
