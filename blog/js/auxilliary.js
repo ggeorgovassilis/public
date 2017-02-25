@@ -1,6 +1,10 @@
 (function() {
 
 	function waitFor(varName, callback) {
+		if (window[varName]){
+			callback();
+			return;
+		}
 		var timer = window.setInterval(function() {
 			if (window[varName]) {
 				window.clearInterval(timer);
@@ -28,12 +32,9 @@
 	function applySyntaxHighlighting() {
 		waitForHljs(function() {
 			hljs.initHighlighting();
-			var list = document.getElementsByTagName("pre");
-			for (var i = 0; i < list.length; i++) {
-				var pre = list[i];
-				if (pre.className.indexOf("prettyprint") != -1)
-					window.hljs.highlightBlock(pre);
-			}
+			$("pre.prettyprint").each(function(index, pre){
+				window.hljs.highlightBlock(pre);
+			});
 		});
 	}
 
