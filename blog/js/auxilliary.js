@@ -120,17 +120,12 @@
 					+ title + summary + publicationDate + "</div></li>";
 			s += html;
 		}
-		console.log(s);
 		var toc = $("#ggLatestPosts").html(s);
 	})};
 
 	function loadLatestPosts() {
-		var s = document.createElement("script");
-		s
-				.setAttribute(
-						"src",
-						"https://blog.georgovassilis.com/feeds/posts/default?orderby=published&alt=json-in-script&callback=renderLatestPosts");
-		document.getElementsByTagName("head")[0].appendChild(s);
+		var s = $("<script defer='' async='' src='https://blog.georgovassilis.com/feeds/posts/default?orderby=published&alt=json-in-script&callback=renderLatestPosts'></script>");
+	    $("head").append(s);
 	}
 
 	loadCss("//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css");
