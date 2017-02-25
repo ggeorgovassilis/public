@@ -10,6 +10,10 @@
 	}
 
 	function waitForJquery(callback) {
+		waitFor("$", callback);
+	}
+
+	function waitForHljs(callback) {
 		waitFor("hljs", callback);
 	}
 
@@ -22,7 +26,7 @@
 	}
 
 	function applySyntaxHighlighting() {
-		waitForJquery(function() {
+		waitForHljs(function() {
 			hljs.initHighlighting();
 			var list = document.getElementsByTagName("pre");
 			for (var i = 0; i < list.length; i++) {
@@ -70,15 +74,11 @@
 		});
 	}
 
-	function showTOC() {
-		window.setTimeout(createTOC, 1);
-	}
-
 	loadCss("//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css");
 	loadCss("https://fonts.googleapis.com/css?family=Pangolin|Lato|Monserrat");
 	applySyntaxHighlighting();
 	rewriteLinksToHttps();
-	showTOC();
+	createTOC();
 })();
 
 function loadLatestPosts() {
