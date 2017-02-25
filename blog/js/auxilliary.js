@@ -56,19 +56,17 @@
 			var z = $('<div><div>');
 			toc.append(z);
 			var chapters = $('main article').find('h1,h2,h3,h4,h5');
-			console.log(chapters);
 			if (chapters.length < 2)
 				return false;
 
-			for (var i = 0; i < chapters.length; i++) {
-				var chapter = $(chapters[i]);
+			chapters.each(function(index, chapter){
 				var headerId = chapter.id || 'link' + i;
 				var li = $("<li><a class='toclink h" + chapter.nodeName
 						+ "' href='#" + headerId + "'>" + htmlEncode(chapter.text())
 						+ "</a></li>");
 				z.append(li);
 				chapter.before($("<a name='"+headerId+"'></a>"));
-			}
+			});
 			return toc;
 		});
 	}
