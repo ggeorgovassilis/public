@@ -59,7 +59,7 @@
 			if (chapters.length < 2)
 				return false;
 
-			chapters.each(function(index, chapter){
+			chapters.each(function(i, chapter){
 				var headerId = chapter.id || 'link' + i;
 				var li = $("<li><a class='toclink h" + chapter.nodeName
 						+ "' href='#" + headerId + "'>" + htmlEncode(chapter.text())
