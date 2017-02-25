@@ -60,6 +60,7 @@
 				return false;
 
 			chapters.each(function(i, chapter){
+				chapter=$(chapter);
 				var headerId = chapter.id || 'link' + i;
 				var li = $("<li><a class='toclink h" + chapter.nodeName
 						+ "' href='#" + headerId + "'>" + htmlEncode(chapter.text())
