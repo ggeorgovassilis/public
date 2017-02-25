@@ -124,8 +124,10 @@
 	})};
 
 	function loadLatestPosts() {
+		window.setTimeout(function(){
 		var s = $("<script defer='' async='' src='https://blog.georgovassilis.com/feeds/posts/default?orderby=published&alt=json-in-script&callback=renderLatestPosts'></script>");
 	    $("head").append(s);
+		},1);
 	}
 
 	loadCss("//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css");
