@@ -93,7 +93,6 @@ function loadLatestPosts() {
 function renderLatestPosts(v) {
 	var entries = v.feed.entry;
 	var count = entries.length < 5 ? entries.length : 5;
-	var e = document.getElementById("ggLatestPosts");
 	var s = "";
 	function findLink(post) {
 		for (var i = 0; i < post.link.length; i++)
@@ -136,7 +135,7 @@ function renderLatestPosts(v) {
 				+ title + summary + publicationDate + "</div></li>";
 		s += html;
 	}
-	e.innerHTML = s;
+	var toc = $("ggLatestPosts").html(s);
 }
 
 loadLatestPosts();
