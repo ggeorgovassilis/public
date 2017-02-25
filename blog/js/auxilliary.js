@@ -55,14 +55,15 @@
 			var toc = $("#innertoc");
 			var z = $('<div><div>');
 			toc.append(z);
-			var toBeTOCced = $('main article h1,h2,h3,h4,h5');
-			if (toBeTOCced.length < 2)
+			var chapters = $('main article h1,h2,h3,h4,h5');
+			console.log(chapters);
+			if (chapters.length < 2)
 				return false;
 
-			for (var i = 0; i < toBeTOCced.length; i++) {
-				var headerId = toBeTOCced[i].id || 'link' + i;
-				var li = $("<li><a class='toclink h" + toBeTOCced[i].nodeName
-						+ "' href='#" + headerId + "'>" + htmlEncode(toBeTOCced[i].innerText)
+			for (var i = 0; i < chapters.length; i++) {
+				var headerId = chapters[i].id || 'link' + i;
+				var li = $("<li><a class='toclink h" + chapters[i].nodeName
+						+ "' href='#" + headerId + "'>" + htmlEncode(chapters[i].innerText)
 						+ "</a></li>");
 				z.append(li);
 			}
