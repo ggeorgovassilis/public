@@ -52,9 +52,9 @@
 
 	function createTOC() {
 		waitForJquery(function() {
-			var y = $("#innertoc");
+			var toc = $("#innertoc");
 			var z = $('<div><div>');
-			y.append(z);
+			toc.append(z);
 			var toBeTOCced = $('#main article h1,h2,h3,h4,h5');
 			if (toBeTOCced.length < 2)
 				return false;
@@ -64,10 +64,9 @@
 				var li = $("<li><a class='toclink h'" + toBeTOCced[i].nodeName
 						+ " href='#" + headerId + ">" + htmlEncode(toBeTOCced[i].innerText)
 						+ "'></a></li>");
-				z.appendChild(li);
+				z.append(li);
 			}
-			return y;
-
+			return toc;
 		});
 	}
 
