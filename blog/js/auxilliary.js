@@ -52,7 +52,6 @@
 
 	function createTOC() {
 		waitForJquery(function() {
-			return;
 			var y = $("#innertoc");
 			var z = $('<div><div>');
 			y.append(z);
