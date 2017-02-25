@@ -61,8 +61,8 @@
 
 			for (var i = 0; i < toBeTOCced.length; i++) {
 				var headerId = toBeTOCced[i].id || 'link' + i;
-				var li = $("<li><a class='toclink h'" + toBeTOCced[i].nodeName
-						+ " href='#" + headerId + ">" + htmlEncode(toBeTOCced[i].innerText)
+				var li = $("<li><a class='toclink h" + toBeTOCced[i].nodeName
+						+ "' href='#" + headerId + ">" + htmlEncode(toBeTOCced[i].innerText)
 						+ "'></a></li>");
 				z.append(li);
 			}
