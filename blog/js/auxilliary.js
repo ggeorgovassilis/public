@@ -55,7 +55,7 @@
 			var toc = $("#innertoc");
 			var z = $('<div><div>');
 			toc.append(z);
-			var chapters = $('main article h1,h2,h3,h4,h5');
+			var chapters = $('main article').find('h1,h2,h3,h4,h5');
 			console.log(chapters);
 			if (chapters.length < 2)
 				return false;
