@@ -54,7 +54,8 @@
 		waitForJquery(function() {
 			return;
 			var y = $("#innertoc");
-			var z = y.append($('<div><div>'));
+			var z = $('<div><div>');
+			y.append(z);
 			var toBeTOCced = getElementsByTagNames('#main article h1,h2,h3,h4,h5');
 			if (toBeTOCced.length < 2)
 				return false;
