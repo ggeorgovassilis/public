@@ -75,9 +75,7 @@
 	}
 
 	window.renderLatestPosts = function(v) {
-		console.log("renderLatestposts");
 		waitForJquery(function(){
-			console.log("rendering");
 		var entries = v.feed.entry;
 		var count = entries.length < 5 ? entries.length : 5;
 		var s = "";
@@ -98,6 +96,7 @@
 
 		for (var i = 0; i < count; i++) {
 			var post = entries[i];
+			console.log(post);
 			var link = findLink(post);
 			var thumbnail = "<div class=nothumbnail></div>";
 			if (post.media$thumbnail) {
