@@ -61,9 +61,10 @@
 				return false;
 
 			for (var i = 0; i < chapters.length; i++) {
-				var headerId = chapters[i].id || 'link' + i;
-				var li = $("<li><a class='toclink h" + chapters[i].nodeName
-						+ "' href='#" + headerId + "'>" + htmlEncode(chapters[i].innerText)
+				var chapter = $(chapters[i]);
+				var headerId = chapter.id || 'link' + i;
+				var li = $("<li><a class='toclink h" + chapter.nodeName
+						+ "' href='#" + headerId + "'>" + htmlEncode(chapter.text())
 						+ "</a></li>");
 				z.append(li);
 			}
