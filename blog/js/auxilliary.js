@@ -96,7 +96,6 @@
 
 		for (var i = 0; i < count; i++) {
 			var post = entries[i];
-			console.log(post);
 			var link = findLink(post);
 			var thumbnail = "<div class=nothumbnail></div>";
 			if (post.media$thumbnail) {
@@ -121,6 +120,7 @@
 					+ title + summary + publicationDate + "</div></li>";
 			s += html;
 		}
+		console.log(s);
 		var toc = $("ggLatestPosts").html(s);
 	})};
 
