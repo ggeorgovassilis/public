@@ -75,7 +75,9 @@
 	}
 
 	window.renderLatestPosts = function(v) {
+		console.log("renderLatestposts");
 		waitForJquery(function(){
+			console.log("rendering");
 		var entries = v.feed.entry;
 		var count = entries.length < 5 ? entries.length : 5;
 		var s = "";
