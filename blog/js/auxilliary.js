@@ -91,6 +91,7 @@ function loadLatestPosts() {
 }
 
 function renderLatestPosts(v) {
+	waitForJquery(function(){
 	var entries = v.feed.entry;
 	var count = entries.length < 5 ? entries.length : 5;
 	var s = "";
@@ -136,6 +137,6 @@ function renderLatestPosts(v) {
 		s += html;
 	}
 	var toc = $("ggLatestPosts").html(s);
-}
+})};
 
 loadLatestPosts();
