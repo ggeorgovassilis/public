@@ -37,6 +37,7 @@
 		waitForJquery(function() {
 			var links = $("a[href*='http://blog.georgovassilis.com'").each(
 					function(link) {
+						console.log(link);
 						var href = "" + link.attr("href");
 						href = href.replace("http://", "https://");
 						link.attr("href", href);
