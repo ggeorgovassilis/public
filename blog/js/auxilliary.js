@@ -74,69 +74,70 @@
 		});
 	}
 
+	window.renderLatestPosts = function(v) {
+		waitForJquery(function(){
+		var entries = v.feed.entry;
+		var count = entries.length < 5 ? entries.length : 5;
+		var s = "";
+		function findLink(post) {
+			for (var i = 0; i < post.link.length; i++)
+				if (post.link[i].rel == "alternate")
+					return post.link[i];
+		}
+		function formatDate(date) {
+			return "<time> | "
+					+ (date.getDate() < 10 ? "0" : "")
+					+ date.getDate()
+					+ " "
+					+ ([ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
+							"Sep", "Oct", "Nov", "Dec" ][date.getMonth()]) + " "
+					+ (1900 + date.getYear()) + "</time>";
+		}
+
+		for (var i = 0; i < count; i++) {
+			var post = entries[i];
+			var link = findLink(post);
+			var thumbnail = "<div class=nothumbnail></div>";
+			if (post.media$thumbnail) {
+				var thumbnail = "<a class=thumbnail href='" + link.href
+						+ "'><img src='" + post.media$thumbnail.url + "'/></a>";
+			}
+			var shortText = "" + post.summary.$t;
+			if (shortText.length > 77) {
+				shortText = shortText.substring(0, 77);
+				shortText = shortText.substring(0, shortText.lastIndexOf(" "))
+						+ "...";
+			}
+			var href = link.href;
+			href = href.replace("http://", "https://");
+			var summary = "<a class=summary href='" + href + "'>" + shortText
+					+ "</a>"
+			var title = "<a class=posttitle href='" + href + "'>" + link.title
+					+ "</a>";
+			var publicationDate = formatDate(new Date(post.published.$t));
+
+			var html = "<li class=latestpost>" + thumbnail + "<div class=text>"
+					+ title + summary + publicationDate + "</div></li>";
+			s += html;
+		}
+		var toc = $("ggLatestPosts").html(s);
+	})};
+
+	function loadLatestPosts() {
+		var s = document.createElement("script");
+		s
+				.setAttribute(
+						"src",
+						"https://blog.georgovassilis.com/feeds/posts/default?orderby=published&alt=json-in-script&callback=renderLatestPosts");
+		document.getElementsByTagName("head")[0].appendChild(s);
+	}
+
 	loadCss("//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css");
 	loadCss("https://fonts.googleapis.com/css?family=Pangolin|Lato|Monserrat");
 	applySyntaxHighlighting();
 	rewriteLinksToHttps();
 	createTOC();
+	loadLatestPosts();
 })();
 
-function loadLatestPosts() {
-	var s = document.createElement("script");
-	s
-			.setAttribute(
-					"src",
-					"https://blog.georgovassilis.com/feeds/posts/default?orderby=published&alt=json-in-script&callback=renderLatestPosts");
-	document.getElementsByTagName("head")[0].appendChild(s);
-}
 
-function renderLatestPosts(v) {
-	waitForJquery(function(){
-	var entries = v.feed.entry;
-	var count = entries.length < 5 ? entries.length : 5;
-	var s = "";
-	function findLink(post) {
-		for (var i = 0; i < post.link.length; i++)
-			if (post.link[i].rel == "alternate")
-				return post.link[i];
-	}
-	function formatDate(date) {
-		return "<time> | "
-				+ (date.getDate() < 10 ? "0" : "")
-				+ date.getDate()
-				+ " "
-				+ ([ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
-						"Sep", "Oct", "Nov", "Dec" ][date.getMonth()]) + " "
-				+ (1900 + date.getYear()) + "</time>";
-	}
-
-	for (var i = 0; i < count; i++) {
-		var post = entries[i];
-		var link = findLink(post);
-		var thumbnail = "<div class=nothumbnail></div>";
-		if (post.media$thumbnail) {
-			var thumbnail = "<a class=thumbnail href='" + link.href
-					+ "'><img src='" + post.media$thumbnail.url + "'/></a>";
-		}
-		var shortText = "" + post.summary.$t;
-		if (shortText.length > 77) {
-			shortText = shortText.substring(0, 77);
-			shortText = shortText.substring(0, shortText.lastIndexOf(" "))
-					+ "...";
-		}
-		var href = link.href;
-		href = href.replace("http://", "https://");
-		var summary = "<a class=summary href='" + href + "'>" + shortText
-				+ "</a>"
-		var title = "<a class=posttitle href='" + href + "'>" + link.title
-				+ "</a>";
-		var publicationDate = formatDate(new Date(post.published.$t));
-
-		var html = "<li class=latestpost>" + thumbnail + "<div class=text>"
-				+ title + summary + publicationDate + "</div></li>";
-		s += html;
-	}
-	var toc = $("ggLatestPosts").html(s);
-})};
-
-loadLatestPosts();
