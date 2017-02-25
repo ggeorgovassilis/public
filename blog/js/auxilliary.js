@@ -121,7 +121,7 @@
 			s += html;
 		}
 		console.log(s);
-		var toc = $("ggLatestPosts").html(s);
+		var toc = $("#ggLatestPosts").html(s);
 	})};
 
 	function loadLatestPosts() {
