@@ -55,7 +55,7 @@
 			var toc = $("#innertoc");
 			var z = $('<div><div>');
 			toc.append(z);
-			var toBeTOCced = $('#main article h1,h2,h3,h4,h5');
+			var toBeTOCced = $('main article h1,h2,h3,h4,h5');
 			if (toBeTOCced.length < 2)
 				return false;
 
