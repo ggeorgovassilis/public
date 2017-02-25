@@ -53,8 +53,6 @@
 	function createTOC() {
 		waitForJquery(function() {
 			var toc = $("#innertoc");
-			var z = $('<div><div>');
-			toc.append(z);
 			var chapters = $('main article').find('h1,h2,h3,h4,h5');
 			if (chapters.length < 2)
 				return false;
@@ -65,8 +63,8 @@
 				var li = $("<li><a class='toclink h" + chapter.nodeName
 						+ "' href='#" + headerId + "'>" + htmlEncode(chapter.text())
 						+ "</a></li>");
-				z.append(li);
 				chapter.before($("<a name='"+headerId+"'></a>"));
+				toc.append(li);
 			});
 			return toc;
 		});
