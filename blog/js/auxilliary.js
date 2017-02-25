@@ -67,6 +67,7 @@
 						+ "' href='#" + headerId + "'>" + htmlEncode(chapter.text())
 						+ "</a></li>");
 				z.append(li);
+				chapter.before($("<a name='"+headerId+"'></a>"));
 			}
 			return toc;
 		});
