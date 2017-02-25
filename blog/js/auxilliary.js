@@ -43,56 +43,30 @@
 					});
 		});
 	}
+	function htmlEncode(value) {
+		return $('<div/>').text(value).html();
+	}
 
 	// from here: http://www.quirksmode.org/dom/getElementsByTagNames.html
 
-	function getElementsByTagNames(list, obj) {
-		if (!obj)
-			var obj = document;
-		var tagNames = list.split(',');
-		var resultArray = new Array();
-		for (var i = 0; i < tagNames.length; i++) {
-			var tags = obj.getElementsByTagName(tagNames[i]);
-			for (var j = 0; j < tags.length; j++) {
-				resultArray.push(tags[j]);
-			}
-		}
-		var testNode = resultArray[0];
-		if (!testNode)
-			return [];
-		if (testNode.sourceIndex) {
-			resultArray.sort(function(a, b) {
-				return a.sourceIndex - b.sourceIndex;
-			});
-		} else if (testNode.compareDocumentPosition) {
-			resultArray.sort(function(a, b) {
-				return 3 - (a.compareDocumentPosition(b) & 6);
-			});
-		}
-		return resultArray;
-	}
-
 	function createTOC() {
-		var blogBody = document.getElementById('main').getElementsByTagName(
-				"article")[0];
-		var y = document.getElementById("innertoc");
-		var z = y.appendChild(document.createElement('div'));
-		var toBeTOCced = getElementsByTagNames('h1,h2,h3,h4,h5', blogBody);
-		if (toBeTOCced.length < 2)
-			return false;
+		waitForJquery(function() {
+			var y = $("#innertoc");
+			var z = y.appendChild(document.createElement('div'));
+			var toBeTOCced = getElementsByTagNames('#main article h1,h2,h3,h4,h5');
+			if (toBeTOCced.length < 2)
+				return false;
 
-		for (var i = 0; i < toBeTOCced.length; i++) {
-			var li = document.createElement('li');
-			var tmp = document.createElement('a');
-			li.appendChild(tmp);
-			tmp.innerText = toBeTOCced[i].innerText;
-			tmp.className = 'toclink h' + toBeTOCced[i].nodeName;
-			z.appendChild(li);
-			var headerId = toBeTOCced[i].id || 'link' + i;
-			tmp.href = '#' + headerId;
-			toBeTOCced[i].id = headerId;
-		}
-		return y;
+			for (var i = 0; i < toBeTOCced.length; i++) {
+				var headerId = toBeTOCced[i].id || 'link' + i;
+				var li = $("<li><a class='toclink h'" + toBeTOCced[i].nodeName
+						+ " href='#" + headerId + ">" + htmlEncode(toBeTOCced[i].innerText)
+						+ "'></a></li>");
+				z.appendChild(li);
+			}
+			return y;
+
+		});
 	}
 
 	function showTOC() {
