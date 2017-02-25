@@ -1,4 +1,18 @@
 (function() {
+
+	function waitFor(varName, callback) {
+		var timer = window.setInterval(function() {
+			if (window[varName]) {
+				window.clearInterval(timer);
+				callback();
+			}
+		}, 250);
+	}
+
+	function waitForJquery(callback) {
+		waitFor("hljs", callback);
+	}
+
 	function loadCss(url) {
 		var e = document.createElement("link");
 		e.rel = "stylesheet";
@@ -8,32 +22,26 @@
 	}
 
 	function applySyntaxHighlighting() {
-		var t = window.setInterval(function() {
-			if (window.hljs) {
-				window.clearInterval(t);
-				hljs.initHighlighting();
-				var list = document.getElementsByTagName("pre");
-				for (var i = 0; i < list.length; i++) {
-					var pre = list[i];
-					if (pre.className.indexOf("prettyprint") != -1)
-						window.hljs.highlightBlock(pre);
-				}
+		waitForJquery(function() {
+			hljs.initHighlighting();
+			var list = document.getElementsByTagName("pre");
+			for (var i = 0; i < list.length; i++) {
+				var pre = list[i];
+				if (pre.className.indexOf("prettyprint") != -1)
+					window.hljs.highlightBlock(pre);
 			}
-		}, 100);
+		});
 	}
 
 	function rewriteLinksToHttps() {
-		window.setTimeout(function() {
-			var links = document.getElementsByTagName("a");
-			for (var i = 0; i < links.length; i++) {
-				var link = links[i];
-				var href = "" + link.getAttribute("href");
-				if (href.indexOf("http://blog.georgovassilis.com") != -1) {
-					href = href.replace("http://", "https://");
-					link.setAttribute("href", href);
-				}
-			}
-		}, 10);
+		waitForJquery(function() {
+			var links = $("a[href*='http://blog.georgovassilis.com'").each(
+					function(link) {
+						var href = "" + link.getAttribute("href");
+						href = href.replace("http://", "https://");
+						link.setAttribute("href", href);
+					});
+		});
 	}
 
 	// from here: http://www.quirksmode.org/dom/getElementsByTagNames.html
@@ -98,10 +106,12 @@
 	showTOC();
 })();
 
-function loadLatestPosts(){
-	console.log("load latest posts");
+function loadLatestPosts() {
 	var s = document.createElement("script");
-	s.setAttribute("src", "https://blog.georgovassilis.com/feeds/posts/default?orderby=published&alt=json-in-script&callback=renderLatestPosts");
+	s
+			.setAttribute(
+					"src",
+					"https://blog.georgovassilis.com/feeds/posts/default?orderby=published&alt=json-in-script&callback=renderLatestPosts");
 	document.getElementsByTagName("head")[0].appendChild(s);
 }
 
@@ -140,7 +150,7 @@ function renderLatestPosts(v) {
 					+ "...";
 		}
 		var href = link.href;
-		href = href.replace("http://","https://");
+		href = href.replace("http://", "https://");
 		var summary = "<a class=summary href='" + href + "'>" + shortText
 				+ "</a>"
 		var title = "<a class=posttitle href='" + href + "'>" + link.title
