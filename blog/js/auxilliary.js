@@ -37,9 +37,9 @@
 		waitForJquery(function() {
 			var links = $("a[href*='http://blog.georgovassilis.com'").each(
 					function(link) {
-						var href = "" + link.getAttribute("href");
+						var href = "" + link.attr("href");
 						href = href.replace("http://", "https://");
-						link.setAttribute("href", href);
+						link.attr("href", href);
 					});
 		});
 	}
