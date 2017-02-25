@@ -38,7 +38,6 @@
 			var links = $("a[href*='http://blog.georgovassilis.com'").each(
 					function(index, link) {
 						link=$(link);
-						console.log(link);
 						var href = "" + link.attr("href");
 						href = href.replace("http://", "https://");
 						link.attr("href", href);
@@ -54,7 +53,7 @@
 	function createTOC() {
 		waitForJquery(function() {
 			var y = $("#innertoc");
-			var z = y.appendChild(document.createElement('div'));
+			var z = y.append($('div'));
 			var toBeTOCced = getElementsByTagNames('#main article h1,h2,h3,h4,h5');
 			if (toBeTOCced.length < 2)
 				return false;
