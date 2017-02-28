@@ -1,3 +1,4 @@
+console.log("auxilliary.js loaded");
 (function() {
 
 	function waitFor(varName, callback) {
