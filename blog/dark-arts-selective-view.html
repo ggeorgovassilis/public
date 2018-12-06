@@ -21,10 +21,18 @@ App.on_init=function(){
 $(window).on("hashchange",App.on_hash_changed);
 //]]>
   </script>
+<style>
+.hidden{
+	display:none;
+}
+.state-overview .show-on-overview, .state-details .show-on-details{
+	display:block;
+}
+</style>
 </head>
 <body>
 <div id=container>
-<form id=overview class=hidden>
+<form class="hidden show-on-overview">
   <div class=list>
     <a href="#details_1">Alice Crypter</a>
     <a href="#details_2">Bob Crypter</a>
@@ -32,7 +40,7 @@ $(window).on("hashchange",App.on_hash_changed);
     <a href="#details_4">Dr. Oz</a>
   </div>
 </form>
-<form id=details class=hidden>
+<form class="hidden show-on-details">
   <div class=list>
     <a href="#details_1">Alice Crypter</a>
     <a href="#details_2">Bob Crypter</a>
