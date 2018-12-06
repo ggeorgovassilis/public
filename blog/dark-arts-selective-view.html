@@ -10,6 +10,7 @@
 let App={};
 App.on_hash_changed=function(){
   var hash = (""+window.location.hash);
+  console.log("hash",hash);
   if (!hash || hash==""){
 	  window.location.hash="#overview";
 	  return;
