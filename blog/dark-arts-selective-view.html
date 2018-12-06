@@ -9,7 +9,12 @@
 //<![CDATA[
 let App={};
 App.on_hash_changed=function(){
-  console.log(window.location.hash);
+  let hash = (""+window.location.hash).substring(1);
+  if (hash.indexOf("details_")!=-1){
+	  $(window).trigger("details",{id:hash.substring(8)});
+  } else
+    $(window).trigger("overview");
+	
 }
 App.set_state=function(state){
   $("#container").attr("class",state);
@@ -19,6 +24,8 @@ App.on_init=function(){
 }
     
 $(window).on("hashchange",App.on_hash_changed);
+$(window).on("overview,App.show_overview);
+$(window).on("details",App.show_details);
 //]]>
   </script>
 <style>
