@@ -23,7 +23,15 @@ App.set_state=function(state){
 App.on_init=function(){
   App.on_hash_changed();
 }
-    
+
+App.show_overview=function(){
+  $("#container").attr("class","state-overview");
+}
+
+App.show_details=function(){
+  $("#container").attr("class","state-details");
+}
+
 $(window).on("hashchange",App.on_hash_changed);
 $(window).on("overview",App.show_overview);
 $(window).on("details",App.show_details);
