@@ -82,11 +82,18 @@ $(document).ready(App.on_init);
 .state-overview .show-on-overview, .state-details .show-on-details{
 	display:block;
 }
+.show-on-overview a{
+	display:block;
+}
+.show-on-details a, .show-on-details label{
+	display:block;
+}
 </style>
 </head>
 <body>
 <div id=container>
 <form class="hidden show-on-overview">
+	<h1>addressbook overview</h1>
   <div class=list>
     <a href="#details_1">Alice Crypter</a>
     <a href="#details_2">Bob Crypter</a>
@@ -96,6 +103,7 @@ $(document).ready(App.on_init);
 </form>
 <form class="hidden show-on-details">
 	<a href="#overview">back</a>
+	<h1>entry details</h1>
 	<label>Name <input id=name type=text/></label>
 	<label>Street <input id=street type=text/></label>
 	<label>Postal <input id=postal type=text/></label>
