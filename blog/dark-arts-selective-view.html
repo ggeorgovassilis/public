@@ -10,7 +10,10 @@
 let App={};
 App.on_hash_changed=function(){
   var hash = (""+window.location.hash);
-  if (!hash || hash=="") hash ="#overview";
+  if (!hash || hash==""){
+	  window.location.hash="#overview";
+	  return;
+  }
   hash = hash.substring(1);
   console.log("hash",hash);
   if (hash.indexOf("details_")!=-1){
@@ -23,14 +26,17 @@ App.set_state=function(state){
   $("#container").attr("class",state);
 }
 App.on_init=function(){
+  console.log("app init");
   App.on_hash_changed();
 }
 
 App.show_overview=function(){
+  console.log("showing overview screen");
   $("#container").attr("class","state-overview");
 }
 
-App.show_details=function(){
+App.show_details=function(e){
+  console.log("showing details screen for ",e);
   $("#container").attr("class","state-details");
 }
 
