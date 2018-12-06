@@ -1,9 +1,45 @@
 <!doctype html>
 <html>
 <head>
-
+<script
+			  src="https://code.jquery.com/jquery-3.3.1.min.js"
+			  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+			  crossorigin="anonymous"></script>
+  <script>
+//<![CDATA[
+let App={};
+App.on_hash_changed=function(){
+  console.log(window.location.hash);
+}
+App.set_state=function(state){
+  $("#container").attr("class",state);
+}
+App.on_init=function(){
+  App.on_hash_changed();
+}
+    
+$(window).on("hashchange",App.on_hash_changed);
+//]]>
+  </script>
 </head>
 <body>
-hi
+<div id=container>
+<form id=overview class=hidden>
+  <div class=list>
+    <a href="#details_1">Alice Crypter</a>
+    <a href="#details_2">Bob Crypter</a>
+    <a href="#details_3">John Doe</a>
+    <a href="#details_4">Dr. Oz</a>
+  </div>
+</form>
+<form id=details class=hidden>
+  <div class=list>
+    <a href="#details_1">Alice Crypter</a>
+    <a href="#details_2">Bob Crypter</a>
+    <a href="#details_3">John Doe</a>
+    <a href="#details_4">Dr. Oz</a>
+  </div>
+</form>
+</div>
 </body>
 </html>
