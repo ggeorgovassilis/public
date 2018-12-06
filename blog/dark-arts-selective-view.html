@@ -8,6 +8,28 @@
   <script>
 //<![CDATA[
 let App={};
+App.addresses={
+"1":{
+	name:"Alice Crypter",
+	street:"Street 1",
+	postal:"Postal 1"
+},
+"2":{
+	name:"Bob Crypter",
+	street:"Street 2",
+	postal:"Postal 2"
+},
+"3":{
+	name:"John Doe",
+	street:"Street 3",
+	postal:"Postal 3"
+},
+"4":{
+	name:"Dr. Oz",
+	street:"Street 4",
+	postal:"Postal 4"
+}
+};
 App.on_hash_changed=function(){
   var hash = (""+window.location.hash);
   console.log("hash",hash);
@@ -18,7 +40,7 @@ App.on_hash_changed=function(){
   hash = hash.substring(1);
   console.log("hash",hash);
   if (hash.indexOf("details_")!=-1){
-	  $(window).trigger("details",[hash.substring(8)]);
+	  $(window).trigger("details",[parseInt(hash.substring(8))]);
   } else
     $(window).trigger("overview");
 	
@@ -39,6 +61,10 @@ App.show_overview=function(){
 App.show_details=function(e, id){
   console.log("showing details screen for ",id);
   $("#container").attr("class","state-details");
+  let item = App.addresses[""+id];
+  $("#name").val(item.name);
+  $("#street").val(item.street);
+  $("#postal").val(item.postal);
 }
 
 $(window).on("hashchange",App.on_hash_changed);
@@ -68,12 +94,9 @@ $(document).ready(App.on_init);
   </div>
 </form>
 <form class="hidden show-on-details">
-  <div class=list>
-    <a href="#details_1">Alice Crypter</a>
-    <a href="#details_2">Bob Crypter</a>
-    <a href="#details_3">John Doe</a>
-    <a href="#details_4">Dr. Oz</a>
-  </div>
+	<label>Name <input id=name/></label>
+	<label>Street <input id=street/></label>
+	<label>Postal <input id=postal/></label>
 </form>
 </div>
 </body>
