@@ -18,7 +18,7 @@ App.on_hash_changed=function(){
   hash = hash.substring(1);
   console.log("hash",hash);
   if (hash.indexOf("details_")!=-1){
-	  $(window).trigger("details",{id:hash.substring(8)});
+	  $(window).trigger("details",[hash.substring(8)]);
   } else
     $(window).trigger("overview");
 	
@@ -36,8 +36,8 @@ App.show_overview=function(){
   $("#container").attr("class","state-overview");
 }
 
-App.show_details=function(e){
-  console.log("showing details screen for ",e);
+App.show_details=function(e, id){
+  console.log("showing details screen for ",id);
   $("#container").attr("class","state-details");
 }
 
