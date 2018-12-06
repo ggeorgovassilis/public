@@ -9,7 +9,9 @@
 //<![CDATA[
 let App={};
 App.on_hash_changed=function(){
-  let hash = (""+window.location.hash).substring(1);
+  var hash = (""+window.location.hash);
+  if (!hash || hash=="") hash ="#overview";
+  hash = hash.substring(1);
   console.log("hash",hash);
   if (hash.indexOf("details_")!=-1){
 	  $(window).trigger("details",{id:hash.substring(8)});
