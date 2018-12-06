@@ -60,8 +60,9 @@ App.show_overview=function(){
 
 App.show_details=function(e, id){
   console.log("showing details screen for ",id);
-  $("#container").attr("class","state-details");
   let item = App.addresses[""+id];
+  console.log("item",item);
+  $("#container").attr("class","state-details");
   $("#name").val(item.name);
   $("#street").val(item.street);
   $("#postal").val(item.postal);
