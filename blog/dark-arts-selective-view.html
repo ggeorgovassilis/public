@@ -1,4 +1,4 @@
-<!doctype html>
+(<!doctype html>
 <html>
 <head>
 <script
@@ -10,6 +10,7 @@
 let App={};
 App.on_hash_changed=function(){
   let hash = (""+window.location.hash).substring(1);
+  console.log("hash",hash);
   if (hash.indexOf("details_")!=-1){
 	  $(window).trigger("details",{id:hash.substring(8)});
   } else
