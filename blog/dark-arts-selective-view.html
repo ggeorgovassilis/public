@@ -45,9 +45,13 @@ App.on_hash_changed=function(){
     $(window).trigger("overview");
 	
 }
-App.set_state=function(state){
-  $("#container").attr("class",state);
+App.add_state=function(state){
+  $("#container").addClass(state);
 }
+App.clear_state=function(state){
+	  $("#container").removeClass(state);
+}
+
 App.on_init=function(){
   console.log("app init");
   App.on_hash_changed();
@@ -55,17 +59,39 @@ App.on_init=function(){
 
 App.show_overview=function(){
   console.log("showing overview screen");
-  $("#container").attr("class","state-overview");
+  App.clear_state("state-details");
+  App.add_state("state-overview");
 }
 
 App.show_details=function(e, id){
   console.log("showing details screen for",id);
   let item = App.addresses[""+id];
+  App.add_state("state-details");
+  App.clear_state("state-overview");
   console.log("item",item);
-  $("#container").attr("class","state-details");
   $("#name").val(item.name);
   $("#street").val(item.street);
   $("#postal").val(item.postal);
+}
+
+App.login=function(){
+	App.clear_state("state-anonymous");
+	App.add_state("state-authenticated");
+}
+
+App.logout=function(){
+	App.clear_state("state-authenticated");
+	App.add_state("state-anonymous");
+}
+
+App.edit_details=function(){
+	$("#details input").removeAttr("readonly");
+	$("#details").addClass("editing");
+}
+
+App.stop_editing_details=function(){
+	$("#details input").attr("readonly","");
+	$("#details").removeClass("editing");
 }
 
 $(window).on("hashchange",App.on_hash_changed);
@@ -76,6 +102,10 @@ $(document).ready(App.on_init);
 //]]>
   </script>
 <style>
+html,body{
+	font-family:sans-serif;
+}
+
 .hidden{
 	display:none;
 }
@@ -88,26 +118,72 @@ $(document).ready(App.on_init);
 .show-on-details a, .show-on-details label{
 	display:block;
 }
+
+.requires-authenticated-user{
+	display:none;
+}
+
+.state-authenticated .requires-authenticated-user, .state-anonymous .requires-anonymous-user{
+	display:inline;
+}
+
+.editable-when-authenticated{
+	-webkit-user-select: none;
+  	-moz-user-select: none;
+  	-ms-user-select: none;
+  	user-select: none; 
+}
+
+.state-authenticated .editable-when-authenticated{
+	-webkit-user-select: none;
+  	-moz-user-select: none;
+  	-ms-user-select: none;
+  	user-select: none; 
+}
+
+.show-when-not-editing{
+	display:inline;
+}
+
+.editing .show-when-not-editing{
+	display:none;
+}
+
+.show-when-editing{
+	display:none;
+}
+.editing .show-when-editing{
+	display:inline;
+}
+
 </style>
 </head>
 <body>
-<div id=container>
-<form class="hidden show-on-overview">
-	<h1>addressbook overview</h1>
+<div id=container class=state-anonymous>
+<section class="hidden show-on-overview">
+  <h1>addressbook overview</h1>
   <div class=list>
     <a href="#details_1">Alice Crypter</a>
     <a href="#details_2">Bob Crypter</a>
     <a href="#details_3">John Doe</a>
     <a href="#details_4">Dr. Oz</a>
   </div>
-</form>
-<form class="hidden show-on-details">
+</section>
+<section id=details class="hidden show-on-details">
 	<a href="#overview">back</a>
 	<h1>entry details</h1>
-	<label>Name <input id=name type=text/></label>
-	<label>Street <input id=street type=text/></label>
-	<label>Postal <input id=postal type=text/></label>
-</form>
+	<label>Name <input id=name type=text readonly/></label>
+	<label>Street <input id=street type=text readonly/></label>
+	<label>Postal <input id=postal type=text readonly/></label>
+	<div class=requires-authenticated-user>
+	<button class="hidden show-when-not-editing" onclick="App.edit_details()">edit</button>
+	<button class="hidden show-when-editing" onclick="App.stop_editing_details()">done</button>
+	</div>
+</section>
+<section>
+<button class="hidden requires-authenticated-user" onclick="App.logout()">log out</button>
+<button class="hidden requires-anonymous-user" onclick="App.login()">log in</button>
+</section>
 </div>
 </body>
 </html>
