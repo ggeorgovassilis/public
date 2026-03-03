@@ -1,19 +1,19 @@
-# Open Watcom C/C++ Compiler: 16-bit 8086 Optimizations Report
+# Open Watcom C/C++ Compiler: 16-bit 8086 Optimisations Report
 
 ## Overview
 
-The Open Watcom compiler suite implements a rich set of optimizations targeting the 16-bit 8086 processor on DOS. The code generator lives primarily in [bld/cg/](bld/cg/) with Intel-specific code in [bld/cg/intel/](bld/cg/intel/) and 8086-specific code in [bld/cg/intel/i86/](bld/cg/intel/i86/). The C front end is in [bld/cc/](bld/cc/) and the C++ front end in [bld/plusplus/](bld/plusplus/).
+The Open Watcom compiler suite implements a rich set of optimisations targeting the 16-bit 8086 processor on DOS (Disk Operating System). The code generator lives primarily in [bld/cg/](bld/cg/) with Intel-specific code in [bld/cg/intel/](bld/cg/intel/) and 8086-specific code in [bld/cg/intel/i86/](bld/cg/intel/i86/). The C front end is in [bld/cc/](bld/cc/) and the C++ front end in [bld/plusplus/](bld/plusplus/).
 
-The overall optimization pipeline (in `bld/cg/c/generate.c`, line 681) runs these major passes in order:
+The overall optimisation pipeline (in `bld/cg/c/generate.c`, line 681) runs these major passes in order:
 
-1. CFG normalization and tail recursion
+1. CFG (Control Flow Graph) normalization and tail recursion
 2. **Common subexpression elimination** (CSE) with copy/constant propagation
-3. **Loop optimizations**: invariant code motion, induction variable strength reduction, loop enregistration
+3. **Loop optimisations**: invariant code motion, induction variable strength reduction, loop enregistration
 4. **Multiplication strength reduction** (multiply → shift+add)
 5. **Register allocation** (graph-coloring based with scoring)
-6. **Peephole optimization** (merge adjacent operations)
+6. **Peephole optimisation** (merge adjacent operations)
 7. **Scoreboarding** (redundant load/store elimination)
-8. **Condition code optimization** (eliminate redundant comparisons)
+8. **Condition code optimisation** (eliminate redundant comparisons)
 9. **Instruction scheduling**
 10. Encoding and object emission
 
@@ -23,15 +23,15 @@ The overall optimization pipeline (in `bld/cg/c/generate.c`, line 681) runs thes
 
 A quick-reference index of the most important source files used throughout this analysis, organized by subsystem. Use this to orient future exploration.
 
-### Code Generator — Core Optimization Passes
+### Code Generator — Core Optimisation Passes
 
 | File | Lines | Role | Sections |
 |------|-------|------|----------|
-| `bld/cg/c/generate.c` | 681 | Main optimization pipeline driver — runs all passes in order | Overview |
+| `bld/cg/c/generate.c` | 681 | Main optimisation pipeline driver — runs all passes in order | Overview |
 | `bld/cg/c/cse.c` | 1636 | Common subexpression elimination, copy propagation, dead code elimination | 7d, 9d |
 | `bld/cg/c/loopopts.c` | 3708 | Loop invariant code motion, induction variable strength reduction, loop enregistration | 7e, 9e |
 | `bld/cg/c/regalloc.c` | 1366 | Graph-coloring register allocator with scoring | 5b |
-| `bld/cg/c/peepopt.c` | 400+ | Peephole optimizer — merges adjacent operations | 7f |
+| `bld/cg/c/peepopt.c` | 400+ | Peephole optimiser — merges adjacent operations | 7f |
 | `bld/cg/c/scmain.c` | 240+ | Scoreboard driver — redundant load/store elimination across basic blocks | 5f, 9c |
 | `bld/cg/c/scins.c` | 442 | `ScoreMove()` — deletes redundant loads when register already holds value | 9c |
 | `bld/cg/c/scinfo.c` | 414 | `ScoreSame()`, `ScoreStomp()`, `ScoreEqual()` — scoreboard matching and alias invalidation | 9c, 9f |
@@ -43,6 +43,8 @@ A quick-reference index of the most important source files used throughout this 
 | `bld/cg/c/inline.c` | 170+ | True function inlining (`BGStartInline`/`BGStopInline`) | 1b |
 | `bld/cg/c/split.c` | 726+ | `R_SWAPOPS`, `R_MAKEXORRR` — operand splitting and rewriting | 2f, 2l |
 | `bld/cg/c/namelist.c` | 640+ | `SAllocMemory()`, `ScaleIndex()` — name interning (hash-consing) | 9a |
+| `bld/cg/c/inssched.c` | 1090 | Instruction scheduler — pipeline reordering, disabled when `OptForSize ≥ 50` | 10f |
+| `bld/cg/c/optrel.c` | 310+ | Branch size optimisation — short/near jump selection | 10d |
 
 ### Code Generator — Intel / 8086 Specific
 
@@ -63,7 +65,8 @@ A quick-reference index of the most important source files used throughout this 
 | `bld/cg/intel/c/x86ver.c` | 400+ | Verifiers: `V_LEA`, `V_CYP2SHIFT`, `V_BYTESHIFT`, `V_LSHONE`, etc. | 2d, 2h, 3a–3c |
 | `bld/cg/intel/c/x86lesds.c` | 421 | `LDS`/`LES` merging, adjacent byte→word store merging | 2j, 7b |
 | `bld/cg/intel/c/x86sel.c` | 483 | Switch/case strategy selection (if-chain, jump table, scan table) | 7c |
-| `bld/cg/intel/c/x86split.c` | 620+ | `rU_TEST()` — 32-bit comparison reductions | 4e |
+| `bld/cg/intel/c/x86split.c` | 620+ | `rU_TEST()` — 32-bit comparison reductions, `UseRepForm()` | 4e, 10e |
+| `bld/cg/intel/i86/c/i86ilen.c` | 79 | `OptInsSize()`, NOP patterns (`MOV AX,AX` / `CLD`), branch/jump size tables | 10d, 10f |
 
 ### C Front End
 
@@ -110,18 +113,18 @@ This is used for intrinsic functions (`memcpy`, `strlen`, etc.) and `#pragma aux
 - When the code generator requests `FEINF_CALL_BYTES` from the front end (`bld/cc/c/cfeinfo.c`, line 1185), it receives the byte sequence.
 - During encoding, `GenCall()` in `bld/cg/intel/c/x86enc2.c` (line 352) checks for a byte sequence and either calls `CodeBytes()` (simple dump) or `CodeSequence()` (with relocations via `FLOATING_FIXUP_BYTE` markers).
 
-**Parameter passing**: Parameters are loaded into **specific hardware registers** before the inline bytes execute — the `parms` field of the pragma definition specifies which parameters go into which registers (e.g., `strlen`: DI=string pointer; `memcpy`: DI=dest, SI=src, CX=count). **No stack frame is created.** The caller arranges register values and the byte sequence operates on them directly.
+**Parameter passing**: Parameters are loaded into **specific HW (Hardware) registers** before the inline bytes execute — the `parms` field of the pragma definition specifies which parameters go into which registers (e.g., `strlen`: DI=string pointer; `memcpy`: DI=dest, SI=src, CX=count). **No stack frame is created.** The caller arranges register values and the byte sequence operates on them directly.
 
-**Not optimized**: The bytes are emitted verbatim. The code generator treats them as opaque — they bypass all optimization passes. The only "optimization" is choosing between different byte sequences for different memory models (small data vs. big data, flat model, `-os` vs `-ot`).
+**Not optimised**: The bytes are emitted verbatim. The code generator treats them as opaque — they bypass all optimisation passes. The only "optimisation" is choosing between different byte sequences for different memory models (small data vs. big data, flat model, `-os` vs `-ot`).
 
 ### 1b. True C/C++ Function Inlining (`inline` keyword, `-oe` flag)
 
-This is genuine source-level inlining where the function body is **re-emitted through the code generator** as part of the calling function's IR.
+This is genuine source-level inlining where the function body is **re-emitted through the code generator** as part of the calling function's IR (Intermediate Representation).
 
 **C compiler path:**
 
 - `IsInLineFunc()` (`bld/cc/c/cgen.c`, line 1709) checks: inline depth < `MAX_INLINE_DEPTH`, function has `FUNC_OK_TO_INLINE`, and function is not recursively in-use.
-- The CG detects `FECALL_GEN_MAKE_CALL_INLINE` in `TNCall()` and calls `BGStartInline()` / `BGStopInline()` (`bld/cg/c/inline.c`, line 92). This calls `FEGenProc()` which asks the front end to re-walk the function's AST and emit CG API calls as if the function body were part of the caller.
+- The CG (Code Generator) detects `FECALL_GEN_MAKE_CALL_INLINE` in `TNCall()` and calls `BGStartInline()` / `BGStopInline()` (`bld/cg/c/inline.c`, line 92). This calls `FEGenProc()` which asks the front end to re-walk the function's AST (Abstract Syntax Tree) and emit CG API (Application Programming Interface) calls as if the function body were part of the caller.
 
 **C++ compiler path (more sophisticated):**
 
@@ -134,7 +137,7 @@ This is genuine source-level inlining where the function body is **re-emitted th
 
 **Parameter passing**: Each parameter is **assigned to a temporary** via a `MakeMove` instruction (`bld/cg/c/inline.c`, line 140). The argument expression is evaluated and moved to the temp. The `inline` function's body then references these temps.
 
-**Fully optimized**: The inlined function's intermediate representation is merged into the caller's IR. The full optimization pipeline (register allocation, CSE, dead code elimination, etc.) runs on the combined code — the optimizer can see through the inline boundary and optimize across it.
+**Fully optimised**: The inlined function's intermediate representation is merged into the caller's IR. The full optimisation pipeline (register allocation, CSE, dead code elimination, etc.) runs on the combined code — the optimiser can see through the inline boundary and optimise across it.
 
 ### Summary: Two Inlining Mechanisms
 
@@ -144,7 +147,7 @@ This is genuine source-level inlining where the function body is **re-emitted th
 | **Used for** | Intrinsics (`memcpy`), `#pragma aux` | `inline` functions, `-oe` |
 | **Bytes emitted in place?** | **Yes**, literally | No — IR is merged |
 | **Parameter handling** | Loaded into specific HW registers | Assigned to temps via `MakeMove` |
-| **Optimized by CG?** | **No** — opaque bytes | **Yes** — full optimization |
+| **Optimised by CG?** | **No** — opaque bytes | **Yes** — full optimisation |
 | **Depth control** | N/A (always inlined) | `inline_depth` pragma (default 3) |
 
 ---
@@ -183,7 +186,7 @@ The macro `_WCIRTLINK` (`bld/hdr/watcom/_comdef.mh`, lines 207–211) is the bri
 | `fabs` | `AND AH,7Fh` (clear sign bit in software float representation) |
 | `.min` / `.max` | Branchless min/max sequences |
 
-The intrinsic selection logic in `IF_Lookup()` (`bld/cc/c/cfeinfo.c`, line 210) chooses between 6 different function tables based on memory model (near/far data, DS-floating/pegged) and optimization preference (size vs speed).
+The intrinsic selection logic in `IF_Lookup()` (`bld/cc/c/cfeinfo.c`, line 210) chooses between 6 different function tables based on memory model (near/far data, DS-floating/pegged) and optimisation preference (size vs speed).
 
 ### 2b. Multiplication by Constants → Shift+Add
 
@@ -192,7 +195,7 @@ The compiler performs **algebraic strength reduction** of constant multiplicatio
 - E.g., `x * 15` → `(x << 4) - x`
 - E.g., `x * 10` → `(x << 3) + (x << 1)`
 
-The decomposed sequence is compared against `MulCost()` (`bld/cg/intel/c/x86mul.c`, line 41). On 8086 specifically, the `MUL`/`IMUL` instruction is costed at **120 cycles** — far more expensive than on later CPUs — so the shift+add replacement is almost always profitable.
+The decomposed sequence is compared against `MulCost()` (`bld/cg/intel/c/x86mul.c`, line 41). On 8086 specifically, the `MUL`/`IMUL` instruction is costed at **120 cycles** — far more expensive than on later CPUs (Central Processing Units) — so the shift+add replacement is almost always profitable.
 
 The `ShiftCost()` function (`bld/cg/intel/c/x86mul.c`, line 105) accounts for 8086 limitations:
 - Shift by 1: cost 2 (single SHL instruction)
@@ -203,7 +206,7 @@ When `OptForSize > 50`, `MulCost()` returns 1, effectively disabling the transfo
 
 ### 2c. Division by Power of 2 → Shift
 
-Two-phase optimization:
+Two-phase optimisation:
 
 1. **Tree folding** (`bld/cg/c/treefold.c`, line 870): `FoldDiv()` converts unsigned `x / 2^n` into `x >> n` using `GetLog2()`.
 2. **Instruction tables** (`bld/cg/intel/i86/c/i86table.c`, line 568): Signed division by power-of-2 uses special generators that implement the rounding-toward-zero correction needed for signed values:
@@ -221,7 +224,7 @@ A left-shift by 1 is converted to `ADD reg,reg`, which has a shorter encoding an
 
 ### 2e. INC/DEC for ±1 and ±2
 
-Addition/subtraction of 1 is replaced with `INC`/`DEC` (1-byte opcode for word registers, via `G_WORDR1`). Addition of 2 is emitted as **double INC** when optimizing for size (`V_OP2TWO_SIZE`). See `bld/cg/intel/i86/c/i86table.c`, line 52 and `bld/cg/intel/c/x86enc.c`, line 2031.
+Addition/subtraction of 1 is replaced with `INC`/`DEC` (1-byte opcode for word registers, via `G_WORDR1`). Addition of 2 is emitted as **double INC** when optimising for size (`V_OP2TWO_SIZE`). See `bld/cg/intel/i86/c/i86table.c`, line 52 and `bld/cg/intel/c/x86enc.c`, line 2031.
 
 ### 2f. XOR for Zeroing Registers
 
@@ -229,14 +232,14 @@ Addition/subtraction of 1 is replaced with `INC`/`DEC` (1-byte opcode for word r
 
 ### 2g. TEST for Comparison Against Zero
 
-`CMP reg,0` is replaced with `TEST reg,reg` via `G_TEST` (`bld/cg/intel/i86/c/i86table.c`, line 775). The `V_OP2ZERO` verifier triggers this. Additionally, for multi-word tests, partial-word optimizations test only the non-zero half:
+`CMP reg,0` is replaced with `TEST reg,reg` via `G_TEST` (`bld/cg/intel/i86/c/i86table.c`, line 775). The `V_OP2ZERO` verifier triggers this. Additionally, for multi-word tests, partial-word optimisations test only the non-zero half:
 - `V_OP2HIGH_B_ZERO` → `R_CYPLOW` (only test low byte)
 - `V_OP2LOW_B_ZERO` → `R_CYPHIGH` (only test high byte)
 - `V_OP2HIGH_W_ZERO` / `V_OP2LOW_W_ZERO` for 32-bit tests
 
 ### 2h. LEA for Address Arithmetic
 
-On 286+ when optimizing for speed, the addition of a register and a constant can be done with `LEA` instead of `ADD`, avoiding flag clobbering. The `V_LEA` verifier (`bld/cg/intel/c/x86ver.c`, line 237) enables this.
+On 286+ when optimising for speed, the addition of a register and a constant can be done with `LEA` instead of `ADD`, avoiding flag clobbering. The `V_LEA` verifier (`bld/cg/intel/c/x86ver.c`, line 237) enables this.
 
 ### 2i. XCHG and XLAT
 
@@ -246,7 +249,7 @@ On 286+ when optimizing for speed, the addition of a register and a constant can
 
 ### 2j. LES/LDS for Loading Far Pointers
 
-The optimizer in `bld/cg/intel/c/x86lesds.c` (line 278) detects two consecutive `MOV` instructions loading a register and a segment register from adjacent memory locations (a far pointer) and merges them into a single `LDS`/`LES`/`LSS`/`LFS`/`LGS` instruction. This saves both code size and cycles.
+The optimiser in `bld/cg/intel/c/x86lesds.c` (line 278) detects two consecutive `MOV` instructions loading a register and a segment register from adjacent memory locations (a far pointer) and merges them into a single `LDS`/`LES`/`LSS`/`LFS`/`LGS` instruction. This saves both code size and cycles.
 
 The same file also merges adjacent byte stores into word stores (line 112) and detects when the scoreboarder has split an `AND AX,imm` into `XOR AH,AH; AND AL,imm` and re-merges them when the split would produce longer code (line 340).
 
@@ -260,7 +263,7 @@ The 8086 encoder directly generates the `LOOP` instruction (opcode `0xE2`) combi
 
 ---
 
-## 3. Shift-by-8 and Shift-by-16 Optimizations
+## 3. Shift-by-8 and Shift-by-16 Optimisations
 
 The compiler implements byte/word-level shuffles as alternatives to expensive multi-bit shifts:
 
@@ -289,7 +292,7 @@ The `V_CYP4SHIFT` verifier (`bld/cg/intel/c/x86ver.c`, line 137) triggers for sh
 - **Left shift by N (N ≥ 16)**: Move the low word to the high word (shifted by N−16), zero the low word.
 - **Right shift by N (N ≥ 16)**: Move the high word to the low word (shifted by N−16), zero the high word.
 
-This is the "Cross Your Parts" optimization — a word-sized move plus a smaller shift, instead of 16+ iterations of single-bit shift through a register pair.
+This is the "Cross Your Parts" optimisation — a word-sized move plus a smaller shift, instead of 16+ iterations of single-bit shift through a register pair.
 
 ### 3d. 32-bit Shift by Small Count (<16, Inline)
 
@@ -355,7 +358,7 @@ SBB high_reg, 0
 - Right shift (unsigned): `SHR high; RCR low`
 - Right shift (signed): `SAR high; RCR low`
 
-Multi-bit shifts use `Do4CXShift()` with a `MOV CX,count; body; LOOP` construct, or the byte-shuffle/CYP optimizations described in section 3.
+Multi-bit shifts use `Do4CXShift()` with a `MOV CX,count; body; LOOP` construct, or the byte-shuffle/CYP optimisations described in section 3.
 
 ### 4e. Comparisons
 
@@ -501,11 +504,11 @@ This takes the parameter in AX (where Watcall would naturally place it), returns
 
 ---
 
-## 7. Other Notable Optimizations
+## 7. Other Notable Optimisations
 
-### 7a. Block Move Optimization
+### 7a. Block Move Optimisation
 
-`DoRepOp()` (`bld/cg/intel/i86/c/i86enc.c`, line 146): For small structure copies, the compiler emits unrolled `MOVSW` instructions instead of `REP MOVSW`. The threshold is controlled by `UseRepForm()`. For larger copies, it uses `REP MOVSW` with a trailing `MOVSB` for odd bytes. When optimizing for size (`OptForSize > 50`), it falls back to `REP MOVSB`.
+`DoRepOp()` (`bld/cg/intel/i86/c/i86enc.c`, line 146): For small structure copies, the compiler emits unrolled `MOVSW` instructions instead of `REP MOVSW`. The threshold is controlled by `UseRepForm()`. For larger copies, it uses `REP MOVSW` with a trailing `MOVSB` for odd bytes. When optimising for size (`OptForSize > 50`), it falls back to `REP MOVSB`.
 
 ### 7b. Adjacent Memory Store Merging
 
@@ -525,18 +528,18 @@ The cost function `Balance()` weighs between code size and execution time based 
 
 ### 7d. Common Subexpression Elimination
 
-The CSE engine in `bld/cg/c/cse.c` (1636 lines) performs iterative copy propagation, expression-level CSE, dead code elimination, and control flow simplification. It preserves induction variables for the subsequent loop optimization pass. CSE is called twice during compilation — once before and once after loop optimization.
+The CSE engine in `bld/cg/c/cse.c` (1636 lines) performs iterative copy propagation, expression-level CSE, dead code elimination, and control flow simplification. It preserves induction variables for the subsequent loop optimisation pass. CSE is called twice during compilation — once before and once after loop optimisation.
 
-### 7e. Loop Optimizations
+### 7e. Loop Optimisations
 
 `bld/cg/c/loopopts.c` (3708 lines) implements:
 - **Induction variable recognition**: finds `i = i + c` patterns and derived linear expressions
 - **Strength reduction**: replaces array indexing `x[i]` with pointer increments
 - **Loop invariant code motion**: hoists invariant computations to a pre-header block
 - **Loop enregistration**: moves loop-invariant memory references into registers (processes from innermost loops outward)
-- **Dead induction variable elimination**: removes IVs whose only use is in comparisons
+- **Dead induction variable elimination**: removes IVs (Induction Variables) whose only use is in comparisons
 
-### 7f. Peephole Optimizations
+### 7f. Peephole Optimisations
 
 `bld/cg/c/peepopt.c` collapses adjacent operations:
 - Two consecutive `ADD` → single `ADD` with summed constants
@@ -549,7 +552,7 @@ The CSE engine in `bld/cg/c/cse.c` (1636 lines) performs iterative copy propagat
 ### 7g. Constant Folding
 
 `bld/cg/c/foldins.c` performs instruction-level constant folding for all arithmetic, bitwise, shift, comparison, and conversion operations. It also normalizes operations:
-- `SUB t1, k` → `ADD t1, -k` (enables commutative optimization)
+- `SUB t1, k` → `ADD t1, -k` (enables commutative optimisation)
 - For commutative ops (ADD, MUL, OR, AND, XOR), constants are moved to the right operand
 
 ### 7h. Tail Recursion
@@ -564,7 +567,7 @@ The `ZPageType` scheme (`bld/cg/h/zeropage.h`) allows global variable access thr
 
 Throughout the instruction tables, the compiler recognizes when only one half of a multi-word operand needs to be operated on:
 
-| Verifier | Meaning | Optimization |
+| Verifier | Meaning | Optimisation |
 |----------|---------|-------------|
 | `V_OP2HIGH_W_ZERO` | Upper 16 bits of operand are zero | Skip high-word operation |
 | `V_OP2LOW_W_ZERO` | Lower 16 bits are zero | Skip low-word operation |
@@ -577,7 +580,7 @@ Throughout the instruction tables, the compiler recognizes when only one half of
 
 ## 8. Software Floating-Point Emulation
 
-When the 8087 FPU is not present (or not targeted), all floating-point operations are implemented as **runtime library calls**. The full set of routines is defined in `bld/cg/intel/i86/h/_rtinfo.h`:
+When the 8087 FPU (Floating-Point Unit) is not present (or not targeted), all floating-point operations are implemented as **runtime library calls**. The full set of routines is defined in `bld/cg/intel/i86/h/_rtinfo.h`:
 
 - **Single-precision**: `__FSA`/`__FSS`/`__FSM`/`__FSD`/`__FSC`/`__FSN` (add/sub/mul/div/cmp/neg)
 - **Double-precision**: `__FDA`/`__FDS`/`__FDM`/`__FDD`/`__FDC`/`__FDN`
@@ -591,7 +594,7 @@ The `fabs` intrinsic (`AND AH,7Fh`) directly clears the sign bit in the software
 
 ## 9. Memory Access Caching (Repeated Loads)
 
-A common question when writing performance-sensitive C code targeting the 8086 is whether repeated accesses to the same memory location — such as `arr[1][2]` used multiple times, or `p->v` accessed repeatedly through a struct pointer — are automatically cached in a register by the compiler. The answer depends on the representation of the access, the optimization passes involved, and the compiler's aliasing model.
+A common question when writing performance-sensitive C code targeting the 8086 is whether repeated accesses to the same memory location — such as `arr[1][2]` used multiple times, or `p->v` accessed repeatedly through a struct pointer — are automatically cached in a register by the compiler. The answer depends on the representation of the access, the optimisation passes involved, and the compiler's aliasing model.
 
 ### 9a. How Memory Operands Are Represented in the CG IR
 
@@ -631,7 +634,7 @@ The constant index is multiplied by the element size, and the result becomes an 
 1. `[1]` → `OPR_DOT` with byte offset `1 × sizeof(int[4])` = `1 × 8` = 8
 2. `[2]` → `OPR_DOT` with byte offset `2 × sizeof(int)` = `2 × 2` = 4
 
-In the code generator, `OPR_DOT` is lowered to `O_PLUS` with a constant (`bld/cc/c/cgen.c`, line 649), so the CG sees `base + 8 + 4`, which folds to `base + 12` — a single `N_MEMORY` reference at a fixed offset from the array symbol. **No multiply, no index register, no runtime computation.** The access is indistinguishable from a named scalar variable as far as the optimizer is concerned.
+In the code generator, `OPR_DOT` is lowered to `O_PLUS` with a constant (`bld/cc/c/cgen.c`, line 649), so the CG sees `base + 8 + 4`, which folds to `base + 12` — a single `N_MEMORY` reference at a fixed offset from the array symbol. **No multiply, no index register, no runtime computation.** The access is indistinguishable from a named scalar variable as far as the optimiser is concerned.
 
 If the subscript is **not** a constant, the else branch creates an `OPR_INDEX`, which generates a multiply by element size and an `O_PLUS` — resulting in an `N_INDEXED` name that requires an index register.
 
@@ -690,7 +693,7 @@ This is a safety restriction: indexed operands might trap or have aliasing conce
 
 ### 9e. Loop Invariant Code Motion
 
-For repeated accesses **inside a loop**, the loop optimizer (`bld/cg/c/loopopts.c`) can hoist invariant loads to the loop pre-header.
+For repeated accesses **inside a loop**, the loop optimiser (`bld/cg/c/loopopts.c`) can hoist invariant loads to the loop pre-header.
 
 `MarkInvariants()` (line 505) classifies every operand as `VU_INVARIANT` or `VU_VARIANT`. The key function is `InvariantOp()` (line 639):
 
@@ -734,7 +737,7 @@ Note: `OP_MOV` from `N_MEMORY` is **not** hoistable (only `N_INDEXED`), because 
 
 ### 9f. The Aliasing Model and `-oa` / `-of`
 
-Open Watcom has **no separate alias analysis pass**. Aliasing is determined ad-hoc at each optimization point by `ZapsTheOp()` / `ReDefinedBy()` (`bld/cg/c/redefby.c`) for CSE/loop opts and `ScoreStomp()` (`bld/cg/c/scinfo.c`, line 72) for the scoreboard.
+Open Watcom has **no separate alias analysis pass**. Aliasing is determined ad-hoc at each optimisation point by `ZapsTheOp()` / `ReDefinedBy()` (`bld/cg/c/redefby.c`) for CSE/loop opts and `ScoreStomp()` (`bld/cg/c/scinfo.c`, line 72) for the scoreboard.
 
 **Default (conservative) aliasing behavior:**
 
@@ -783,7 +786,7 @@ The access becomes `N_INDEXED` with the pointer register as `index`, `offsetof(s
 
 **Scenario 3: Pointer dereference with no known base (e.g., `*(ptr + offset)`)**
 
-This is the worst case for the optimizer. Without a known base symbol, the compiler cannot prove non-aliasing with anything. Any memory write anywhere invalidates the cached value.
+This is the worst case for the optimiser. Without a known base symbol, the compiler cannot prove non-aliasing with anything. Any memory write anywhere invalidates the cached value.
 
 - **Manual caching almost always recommended** unless the code is trivially straight-line with no stores at all.
 
@@ -804,11 +807,128 @@ This is the worst case for the optimizer. Without a known base symbol, the compi
 
 ---
 
+## 10. The 8088/8086 Prefetch Queue 
+
+The Open Watcom codebase includes a notable example of prefetch queue awareness at the diagnostic level: the `PBus()` routine in `bld/techinfo/pbus.asm` distinguishes the 8088 (4-byte queue, 8-bit bus) from the 8086 (6-byte queue, 16-bit bus) at runtime by using self-modifying code and measuring how many NOP bytes the queue has already fetched past the modification point. However, the compiler's code generator itself makes **no distinction** between the two processors — it targets a generic "i86" that generates identical code for both.
+
+### 10a. Shorter Instruction Encodings
+
+The instruction tables in `bld/cg/intel/i86/c/i86table.c` and the encoding logic in `bld/cg/intel/c/x86enc.c` systematically prefer shorter instruction forms. These are documented individually in earlier sections; the table below collects them with their byte-count impact.
+
+| Optimisation | Longer form | Bytes | Shorter form | Bytes | Saved | Trigger | Section |
+|---|---|---|---|---|---|---|---|
+| Accumulator short forms (`G_AC`) | `ADD r8,imm8` / `ADD r16,imm16` | 3 / 4 | `ADD AL,imm8` / `ADD AX,imm16` | 2 / 3 | 1 | `RG_BYTE_ACC` / `RG_WORD_ACC` in tables | 6a |
+| INC/DEC word register (`G_WORDR1`) | `ADD reg16,1` (83 /0 reg 01) | 3 | `INC reg16` (40+r) | 1 | 2 | `V_OP2ONE` | 2e |
+| Double INC/DEC for ±2 | `ADD reg16,2` (83 /0 reg 02) | 3 | `INC reg16; INC reg16` (40+r 40+r) | 2 | 1 | `V_OP2TWO_SIZE` (only when `OptForSize > 50`) | 2e |
+| XOR for zero (`R_MAKEXORRR`) | `MOV reg16,0` (B8+r 00 00) | 3 | `XOR reg16,reg16` (33 /r) | 2 | 1 | `V_OP1ZERO` | 2f |
+| TEST for CMP 0 (`G_TEST`) | `CMP reg16,0` (83 /7 reg 00) | 3 | `TEST reg16,reg16` (85 /r) | 2 | 1 | `V_OP2ZERO` | 2g |
+| Left shift by 1 → ADD (`R_ADDRR`) | `SHL reg16,1` (D1 /4) | 2 | `ADD reg16,reg16` (03 /r) | 2 | 0 | `V_LSHONE` (286+ only, enables LEA combine) | 2d |
+| LOOP instruction | `DEC CX` (49) + `JNZ rel8` (75 xx) | 3 | `LOOP rel8` (E2 xx) | 2 | 1 | Hardcoded in `Do4CXShift()` | 2k |
+| Operand swap (`R_SWAPOPS`) | `ADD [mem],reg` (01 mod-r/m ...) | 4+ | `ADD reg,[mem]` (03 mod-r/m ...) | 3+ | 1 | `V_SWAP_GOOD` (mem left → reg left saves a byte in many cases) | 2l |
+
+How `G_AC` works: the accumulator short forms (opcodes 04/05, 0C/0D, 14/15, etc.) omit the mod-r/m byte. In the encoding at `bld/cg/intel/c/x86enc.c` (line 1993), `G_AC` backs up the instruction cursor by one (`ICur--; ILen--; IEsc--`) to overwrite the mod-r/m byte that the instruction layer already reserved, then writes only the immediate — saving exactly 1 byte.
+
+The instruction tables are ordered so that shorter encodings are tried first. For example, in the `Add2[]` table at `bld/cg/intel/i86/c/i86table.c` (line 52), the entries are ordered: `V_OP2ONE` → `G_WORDR1` (1-byte INC), then `V_OP2TWO_SIZE` → `G_WORDR1` (double INC, size-only), then `RG_WORD_ACC` → `G_AC` (accumulator short form), then general `G_RC`. The first match wins, so shorter forms are preferred whenever their verifier passes.
+
+### 10b. Branch Size Optimisation
+
+On the 8086, branches have dramatically different byte counts depending on distance:
+
+| Branch type | Short form (bytes) | Near form (bytes) | Saved by short |
+|---|---|---|---|
+| Unconditional jump (`JMP`) | 2 (`EB rel8`) | 3 (`E9 rel16`) | 1 |
+| Conditional branch (`Jcc`) | 2 (`7x rel8`) | 5 (reverse `Jcc` + `JMP rel16`) | 3 |
+| CALL | — | 3 (`E8 rel16`) | — |
+| Far CALL | — | 5 (`9A seg:off`) | — |
+
+The 8086 does not have the 386's 2-byte `0F 8x rel16` near conditional branch. A near conditional branch must therefore be emitted as a **reversed short branch over a near `JMP`** (5 bytes total: 2 for the reversed Jcc + 3 for JMP). This is encoded in `bld/cg/intel/c/x86esc.c` (line 275). Converting a near conditional to a short conditional therefore saves **3 bytes** — a significant win for the prefetch queue.
+
+The size table is defined by `OptInsSize()` in `bld/cg/intel/i86/c/i86ilen.c` (line 58):
+
+```c
+static const byte InsSize[4][OC_DEST_FAR + 1] = {
+/*      OC_DEST_SHORT   OC_DEST_NEAR    OC_DEST_CHEAP   OC_DEST_FAR */
+{       0,              3,              4,              5 },    /* CALL */
+{       2,              3,              0,              5 },    /* JMP */
+{       2,              5,              0,              0 },    /* JCOND */
+{       2,              4,              0,              0 },    /* JCOND,386 */
+};
+```
+
+The branch optimiser in `bld/cg/c/optrel.c` (`SetBranches()`, line 232) converts branches to their short forms:
+
+1. **`CanReach()`** (line 60) walks forward (or checks backward) from a branch instruction to its target label, accumulating bytes. If the total is within `MAX_SHORT_FWD` (127 bytes forward) or `MAX_SHORT_BWD` (128 bytes backward), the branch can use the 2-byte short form.
+
+2. **`SetShort()`** (line 192) shrinks the branch instruction's recorded `objlen` from the near size to the short size and records the byte savings.
+
+3. **`BigBranch()`** (line 149) handles the case where a branch cannot reach its target: it tries to jump to a nearby unconditional jump ("jump to a jump"), use an existing redirection label, insert a new trampoline jump, or reverse the condition and add a near jump.
+
+4. When `OptForSize > 50`, the optimiser makes additional effort to reuse redirection labels to keep branches short (`bld/cg/c/optrel.c`, line 263): `else if( OptForSize > 50 && InRange() )` — a label from a previous redirection is reused if it is still within short-branch range, avoiding the need for a near jump.
+
+### 10c. REP String Operations vs. Instruction Loops
+
+The `REP`-prefixed string instructions (`REP MOVSW`, `REP STOSW`, `REP CMPSB`, etc.) execute entirely within the EU, repeating without re-fetching instruction bytes on each iteration. This is a direct prefetch queue benefit: a `REP MOVSW` loop is 2 bytes regardless of iteration count, while an equivalent manual loop (`MOV AX,[SI]; MOV [DI],AX; ADD SI,2; ADD DI,2; LOOP`) would be 10+ bytes fetched repeatedly.
+
+The intrinsic implementations in `bld/cc/a/codei86.asm` (section 2a) exploit this: `memcpy` uses `REP MOVSW` with an odd-byte `MOVSB` fixup, `memset` uses `REP STOSW`, `strlen` uses `REPNZ SCASB`, and `memcmp` uses `REPE CMPSB`. These tight inner loops have near-zero instruction fetch overhead.
+
+The compiler's choice between unrolled `MOVSW` and `REP MOVSW` for structure copies is controlled by `UseRepForm()` in `bld/cg/intel/c/x86split.c` (line 267). The decision considers:
+
+- If the copy is **>10 words**: always use `REP MOVSW` (large enough that startup overhead is amortized)
+- If **`OptForSize > 50`** (`-os`): use `REP` form whenever the unrolled form would be longer than `MOV_SIZE + 2` bytes (on 16-bit, `MOV_SIZE` is 3 bytes for `REP MOVSW` + loop overhead)
+- Otherwise: a cost model compares `REP` startup cost against per-instruction `MOVSW` cost. On the 8086 (when `!_CPULevel(CPU_486)`), the startup cost is higher, so the threshold for switching to `REP` form is higher
+
+The unrolled form (`DoRepOp()` in `bld/cg/intel/i86/c/i86enc.c`, line 146) emits literal `MOVSW` bytes (1 byte each): for a 6-byte struct, it emits `MOVSW; MOVSW; MOVSW` (3 bytes) instead of `MOV CX,3; REP MOVSW` (4 bytes). For very small copies this is both smaller and faster, but the bytes scale linearly.
+
+When `OptForSize > 50` and the byte count is odd, the compiler simplifies further to `REP MOVSB` (2 bytes for the entire copy), avoiding the separate odd-byte fixup instruction.
+
+### 10d. Code Alignment and NOP Padding
+
+Alignment inserts NOP bytes before a label so that loop headers or procedure entries land on favorable memory addresses. On the 8086 with its 16-bit bus, word-aligned instruction fetches are slightly more efficient (one bus cycle fetches 2 bytes at once; an odd-aligned fetch may require an extra cycle). However, NOP padding bytes must themselves be fetched through the prefetch queue, consuming bus bandwidth to do no useful work.
+
+The `DepthAlign()` function in `bld/cg/intel/c/x86enc2.c` (line 130) controls alignment:
+
+- **When `OptForSize > 0`**: alignment is **disabled** (returns 1, meaning no padding). This covers both `-os` (`OptForSize = 100`) and the default (`OptForSize = 50`). Only `-ot` (`OptForSize = 0`) enables any alignment at all.
+- **On pre-386 CPUs with `-ot`**: alignment for procedure entries and deep loops is controlled by the front end's `FEINF_CODE_LABEL_ALIGNMENT` array. Other labels get no alignment (returns 1).
+- **On 386**: procedure/deep loop alignment is 4 bytes.
+- **On 486+**: procedure/deep loop alignment is 16 bytes.
+
+When NOP padding is inserted, the `DoAlignment()` function in `bld/cg/intel/c/x86esc.c` (line 241) uses the NOP patterns defined for the target. On the 8086, these are defined in `bld/cg/intel/i86/c/i86ilen.c` (line 41):
+
+```c
+static const byte   NopList[] = {
+    2,                  /* objlen of first NOP pattern */
+    0x89, 0xc0,         /* MOV AX,AX */
+    0xfc                /* CLD */
+};
+```
+
+The 2-byte NOP is `MOV AX,AX` (89 C0) — a real instruction that does nothing. The 1-byte NOP is `CLD` (FC) — which clears the direction flag as a side effect, chosen because the calling convention requires DF=0 anyway. The more conventional `NOP` (90h, `XCHG AX,AX`) is not used in the NOP table, though it would be functionally equivalent.
+
+The alignment strategy is correct for the 8088/8086: NOP padding is almost never worthwhile because the fetch cost of the padding bytes outweighs the alignment benefit. The 8086's word-fetch advantage from alignment is at most 4 cycles per misaligned fetch, while each padding byte costs 4 cycles on the 8088 (or 2 cycles on the 8086) to fetch. The compiler defaults to no padding.
+
+### 10e. What the Compiler Does Not Do
+
+Several prefetch-queue-aware optimisations could in theory be implemented but are absent from the Open Watcom code generator:
+
+**No 8088/8086 distinction.** The compiler generates identical code for both processors. It does not account for the 4-byte vs. 6-byte queue size or the 8-bit vs. 16-bit data bus width. The `PBus()` routine in `bld/techinfo/pbus.asm` can detect the bus width at runtime, but the code generator never queries it. There is no `-m8088` or equivalent flag. In practice, code optimised for the 8088's tighter constraints (favoring smaller instructions even more aggressively) would also run well on the 8086, so this is not a significant limitation.
+
+**No instruction-length-aware scheduling.** The instruction scheduler in `bld/cg/c/inssched.c` reorders instructions to minimize pipeline stalls, using a dependency DAG and stall-cost model. It does not consider instruction byte length or model the time the BIU needs to fetch each instruction. On the 8086, where the bus is the bottleneck rather than the execution pipeline, the scheduler is disabled entirely when `OptForSize >= 50` (line 261). Even when enabled (under `-ot`), it optimises for superscalar/pipelined CPUs (486+), not for the 8086's fetch-bound execution model.
+
+**No word-alignment of branch targets.** As discussed in section 10f, the compiler does not align branch targets to even addresses for the 8086's word-aligned fetch benefit. When `OptForSize > 0` (the default and `-os`), all alignment is disabled. Even under `-ot`, only procedure entries and deep loop headers receive alignment — ordinary branch targets within a function are never aligned.
+
+**No `XCHG AX,reg` exploitation.** The 1-byte `XCHG AX,reg16` encoding (opcodes 91–97) is never generated by the code generator except in one hardcoded byte sequence for switch/case scanning (section 2i). The compiler does not recognize register-swap patterns and replace them with `XCHG`, nor does it use `XCHG` to cheaply move values through AX when that would shorten subsequent accumulator-form instructions.
+
+**No `MOV AX,moffs16` preference.** The 3-byte direct-address accumulator load (`A1 addr16`, `MOV AX,[addr]`) is 1 byte shorter than the general form (`8B 06 addr16`, `MOV reg16,[addr]`). The instruction tables and encoding logic do not have a special `G_AC`-style path for move instructions that would prefer routing direct-address loads through AX. The `G_AC` optimisation applies only to ALU operations with immediate operands, not to memory loads.
+
+**No XLAT generation.** The 1-byte `XLAT` instruction (table lookup via `AL = [BX+AL]`) is never generated (section 2i). The compiler does not recognize byte-array-indexed-by-byte patterns as XLAT candidates.
+
+---
+
 ## Appendix: Key Source Files Reference
 
 | Area | File | Lines | Description |
 |------|------|-------|-------------|
-| Optimization pipeline | `bld/cg/c/generate.c` | 681 | Main code generation driver |
+| Optimisation pipeline | `bld/cg/c/generate.c` | 681 | Main code generation driver |
 | Multiplication strength reduction | `bld/cg/c/multiply.c` | 271 | Factor const multipliers into shift+add |
 | i86 multiplication costs | `bld/cg/intel/c/x86mul.c` | 127 | CPU-specific cost functions |
 | i86 instruction tables | `bld/cg/intel/i86/c/i86table.c` | 1457 | Opcode→generator mapping |
@@ -818,14 +938,14 @@ This is the worst case for the optimizer. Without a known base symbol, the compi
 | Intel verifiers | `bld/cg/intel/c/x86ver.c` | 400+ | V_LEA, V_CYP2SHIFT, V_BYTESHIFT, etc. |
 | Intel common encoding | `bld/cg/intel/c/x86enc.c` | 2400+ | G_TEST, G_WORDR1, G_LEA, G_LDSES |
 | Intel call encoding | `bld/cg/intel/c/x86enc2.c` | 750+ | GenCall(), CodeBytes(), CodeSequence() |
-| LES/LDS optimization | `bld/cg/intel/c/x86lesds.c` | 421 | Far pointer load merging |
+| LES/LDS optimisation | `bld/cg/intel/c/x86lesds.c` | 421 | Far pointer load merging |
 | Switch/case codegen | `bld/cg/intel/c/x86sel.c` | 483 | Jump/scan table generation |
 | Register tables (i86) | `bld/cg/intel/i86/c/i86rgtbl.c` | 1010 | Register sets, allocation order |
 | Register allocation | `bld/cg/c/regalloc.c` | 1366 | Graph-coloring allocator |
 | Register scoring | `bld/cg/intel/i86/c/i86score.c` | 238 | i86-specific scoreboarding |
 | CSE | `bld/cg/c/cse.c` | 1636 | Common subexpression elimination |
-| Loop optimization | `bld/cg/c/loopopts.c` | 3708 | Strength reduction, invariant motion |
-| Peephole optimizer | `bld/cg/c/peepopt.c` | 400+ | Adjacent operation merging |
+| Loop optimisation | `bld/cg/c/loopopts.c` | 3708 | Strength reduction, invariant motion |
+| Peephole optimiser | `bld/cg/c/peepopt.c` | 400+ | Adjacent operation merging |
 | Constant folding | `bld/cg/c/foldins.c` | 447 | Instruction-level const folding |
 | Tree folding | `bld/cg/c/treefold.c` | 1000+ | Division→shift, operand folding |
 | Inline expansion | `bld/cg/c/inline.c` | 170+ | True function inlining |
@@ -841,3 +961,7 @@ This is the worst case for the optimizer. Without a known base symbol, the compi
 | Calling conventions | `bld/fe_misc/h/callinfo.c` | 500+ | Watcall/cdecl/pascal setup |
 | C inlining decisions | `bld/cc/c/cgen.c` | 1709 | IsInLineFunc() |
 | C++ inlining decisions | `bld/plusplus/c/cgbkcgrf.c` | 1334 | MarkFuncsToGen() call graph |
+| Instruction size / NOP | `bld/cg/intel/i86/c/i86ilen.c` | 79 | OptInsSize(), NOP patterns, branch size tables |
+| Branch size optimisation | `bld/cg/c/optrel.c` | 310+ | Short/near jump selection, redirection |
+| Instruction scheduler | `bld/cg/c/inssched.c` | 1090 | Pipeline reordering (disabled for `-os`) |
+| Bus width detection | `bld/techinfo/pbus.asm` | 83 | 8088 vs 8086 prefetch queue detection |
