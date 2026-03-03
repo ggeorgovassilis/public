@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Open Watcom compiler suite implements a rich set of optimisations targeting the 16-bit 8086 processor on DOS (Disk Operating System). The code generator lives primarily in [bld/cg/](bld/cg/) with Intel-specific code in [bld/cg/intel/](bld/cg/intel/) and 8086-specific code in [bld/cg/intel/i86/](bld/cg/intel/i86/). The C front end is in [bld/cc/](bld/cc/) and the C++ front end in [bld/plusplus/](bld/plusplus/).
+The Open Watcom compiler suite implements a rich set of optimisations targeting the 16-bit 8086 processor on DOS (Disk Operating System). This document was written by an AI after analysing Open Watcom (beta feb 2 2026).
 
 The overall optimisation pipeline (in `bld/cg/c/generate.c`, line 681) runs these major passes in order:
 
